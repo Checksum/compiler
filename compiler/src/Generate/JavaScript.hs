@@ -30,7 +30,7 @@ import qualified Generate.JavaScript.Mode as Mode
 import qualified Reporting.Doc as D
 import qualified Reporting.Render.Type as RT
 import qualified Reporting.Render.Type.Localizer as L
-
+import Debug.Trace
 
 
 -- GENERATE MAINS
@@ -49,14 +49,15 @@ generate mode (Opt.Graph mains graph _fields) roots =
   in
   case map ModuleName._module (Map.keys rootMap) of
     [] ->
-      None
+      do trace "nothing at all" $ None
 
     name:names ->
+      trace ("something: " ++ (N.toString name)) (
       let
         state = Map.foldrWithKey (addMain mode graph) emptyState rootMap
         builder = perfNote mode <> stateToBuilder state <> toMainExports mode rootMap
       in
-      Some name names builder
+      Some name names builder)
 
 
 addMain :: Mode.Mode -> Graph -> ModuleName.Canonical -> main -> State -> State
@@ -164,28 +165,29 @@ addGlobalHelp mode graph global state =
     addDeps deps someState =
       Set.foldl' (addGlobal mode graph) someState deps
   in
+  trace ("isMember: " ++ (if (Map.member global graph) then "True" else "False") ++ ", name: " ++ Opt.toString global) $
   case graph ! global of
     Opt.Define expr deps ->
-      addStmt (addDeps deps state) (
+      trace "Opt.Define" $ addStmt (addDeps deps state) (
         var global (Expr.generate mode expr)
       )
 
     Opt.DefineTailFunc argNames body deps ->
-      addStmt (addDeps deps state) (
+      trace "Opt.DefineTailFunc" $ addStmt (addDeps deps state) (
         let (Opt.Global _ name) = global in
         var global (Expr.generateTailDef mode name argNames body)
       )
 
     Opt.Ctor index arity ->
-      addStmt state (
+      trace "Opt.Ctor" $ addStmt state (
         var global (Expr.generateCtor mode global index arity)
       )
 
     Opt.Link linkedGlobal ->
-      addGlobal mode graph state linkedGlobal
+      trace "Opt.Link" $ addGlobal mode graph state linkedGlobal
 
     Opt.Cycle names values functions deps ->
-      addStmt (addDeps deps state) (
+      trace "Opt.Cycle" $ addStmt (addDeps deps state) (
         generateCycle mode global names values functions
       )
 
@@ -193,6 +195,7 @@ addGlobalHelp mode graph global state =
       generateManager mode graph global effectsType state
 
     Opt.Kernel (Opt.KContent clientChunks clientDeps) maybeServer ->
+      trace "Opt.Kernel" (
       if isDebugger global && not (Mode.isDebug mode) then
         state
       else
@@ -201,7 +204,7 @@ addGlobalHelp mode graph global state =
             addKernel (addDeps serverDeps state) (generateKernel mode serverChunks)
 
           _ ->
-            addKernel (addDeps clientDeps state) (generateKernel mode clientChunks)
+            addKernel (addDeps clientDeps state) (generateKernel mode clientChunks))
 
     Opt.Enum index ->
       addStmt state (

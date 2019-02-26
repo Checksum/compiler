@@ -36,7 +36,7 @@ import qualified Elm.PerUserCache as PerUserCache
 import qualified Reporting.Doc as D
 import qualified Reporting.Exit as Exit
 import qualified Reporting.Progress as Progress
-
+import Debug.Trace
 
 
 -- TASKS
@@ -109,7 +109,7 @@ getPackageCacheDirFor name version =
   do  cacheDir <- getPackageCacheDir
       let dir = cacheDir </> Pkg.toFilePath name </> Pkg.versionToString version
       liftIO (Dir.createDirectoryIfMissing True dir)
-      return dir
+      trace dir (return dir)
 
 
 

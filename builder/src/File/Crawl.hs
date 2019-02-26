@@ -30,6 +30,7 @@ import qualified File.IO as IO
 import qualified Reporting.Exit as Exit
 import qualified Reporting.Exit.Crawl as E
 import qualified Reporting.Task as Task
+import Debug.Trace
 
 
 
@@ -170,12 +171,12 @@ dfs summary chan oldPending oldSeen unvisited graph =
                 Right (Local name info@(Header.Info path _ _ imports)) ->
                   do  let newGraph = graph { _locals = Map.insert name info (_locals graph) }
                       let deps = map (Unvisited (E.Module path name)) imports
-                      dfs summary chan (pending - 1) seen deps newGraph
+                      trace ("Right local: " ++ path) $ dfs summary chan (pending - 1) seen deps newGraph
 
                 Right (Kernel name info) ->
                   do  let kernels = Map.insert name info (_kernels graph)
                       let newGraph = graph { _kernels = kernels }
-                      dfs summary chan (pending - 1) seen [] newGraph
+                      trace "Right kernel" (dfs summary chan (pending - 1) seen [] newGraph)
 
                 Right (Foreign name pkg) ->
                   do  let foreigns = Map.insert name pkg (_foreigns graph)
@@ -228,13 +229,13 @@ toVisitor summary (Unvisited origin name) =
   do  asset <- Find.find summary origin name
       case asset of
         Find.Local path ->
-          uncurry Local <$> Header.readModule summary name path
+          trace ("Find.Local" ++ path) $ uncurry Local <$> Header.readModule summary name path
 
         Find.Foreign pkg ->
           return $ Foreign name pkg
 
         Find.Kernel clientPath maybeServerPath ->
-          return $ Kernel name (clientPath, maybeServerPath)
+          trace ("GotKernel: " ++ Module.nameToString name) (return $ Kernel name (clientPath, maybeServerPath))
 
         Find.ForeignKernel ->
           return ForeignKernel
@@ -294,4 +295,3 @@ toImportDict (Summary _ project exposed _ _) locals =
       Map.insertWith (++) name localPkg dict
   in
   Map.foldrWithKey addLocal (Map.map (map Pkg._name) exposed) locals
-

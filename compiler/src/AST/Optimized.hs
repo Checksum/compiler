@@ -14,6 +14,7 @@ module AST.Optimized
   , EffectsType(..)
   , KContent(..)
   , KChunk(..)
+  , toString
   )
   where
 
@@ -32,7 +33,7 @@ import qualified Elm.Name as N
 import qualified Elm.Package as Pkg
 import qualified Optimize.DecisionTree as DT
 import qualified Reporting.Region as R
-
+import Debug.Trace
 
 
 -- EXPRESSIONS
@@ -72,11 +73,17 @@ data Global = Global ModuleName.Canonical N.Name
   deriving (Eq, Ord)
 
 
+toString :: Global -> String
+toString (Global _ name) =
+  N.toString name
+
+
+
 -- Provide "List" not "Elm.Kernel.List"
 --
 kernel :: N.Name -> Global
 kernel home =
-  Global (ModuleName.Canonical Pkg.kernel home) N.dollar
+  trace ("calling Opt.Kernel: " ++ (N.toString home)) Global (ModuleName.Canonical Pkg.kernel home) N.dollar
 
 
 

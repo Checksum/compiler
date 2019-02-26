@@ -12,6 +12,7 @@ module Generate.Output
   where
 
 
+import Debug.Trace
 import Control.Concurrent.MVar (MVar, putMVar)
 import Control.Monad.Trans (liftIO)
 import qualified Data.ByteString.Builder as B
@@ -137,7 +138,7 @@ generateMonolith mode maybeOutput (Summary.Summary _ project _ _ _) graph rootNa
           liftIO $
           case maybeOutput of
             Nothing ->
-              IO.writeBuilder "index.html" (Html.sandwich name monolith)
+              traceStack "maybeOutput" $ IO.writeBuilder "index.html" (Html.sandwich name monolith)
 
             Just output_ ->
               case output_ of
@@ -146,14 +147,14 @@ generateMonolith mode maybeOutput (Summary.Summary _ project _ _ _) graph rootNa
 
                 JavaScript maybeDir fileName ->
                   do  path <- toWritablePath maybeDir fileName
-                      IO.writeBuilder path monolith
+                      trace ("js" ++ path) $ IO.writeBuilder path monolith
 
                 HtmlBuilder mvar ->
                   putMVar mvar (Html.sandwich name monolith)
 
                 Html maybeDir fileName ->
                   do  path <- toWritablePath maybeDir fileName
-                      IO.writeBuilder path (Html.sandwich name monolith)
+                      trace ("html" ++ path) $ IO.writeBuilder path (Html.sandwich name monolith)
 
 
 

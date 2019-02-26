@@ -12,6 +12,7 @@ import qualified Data.Maybe as Maybe
 import qualified System.FilePath as FP
 import qualified System.Directory as Dir
 import System.FilePath ((</>), (<.>))
+import Debug.Trace
 
 import qualified Elm.Compiler.Module as Module
 import qualified Elm.Name as N
@@ -44,8 +45,13 @@ find (Summary.Summary root project exposed _ _) origin name =
       let toRoot dir = FP.makeRelative here (root </> dir)
       case project of
         Project.App info ->
-          do  let srcDirs = map toRoot (Project._app_source_dirs info)
-              findElm project srcDirs exposed origin name
+          if N.startsWith "Elm.Kernel." name then
+            findKernel (toRoot "src") exposed origin name
+          else
+            let
+              srcDirs = map toRoot (Project._app_source_dirs info)
+            in
+              trace ("path:" ++ Module.nameToSlashPath name) (findElm project srcDirs exposed origin name)
 
         Project.Pkg _ ->
           if N.startsWith "Elm.Kernel." name then
@@ -69,7 +75,7 @@ findElm project srcDirs exposed origin name =
 
       case (paths, Map.lookup name exposed) of
         ([path], Nothing) ->
-            return (Local path)
+            trace "findElm#Local" $ return (Local path)
 
         ([], Just [pkg]) ->
             return (Foreign pkg)
@@ -104,7 +110,7 @@ findKernel srcDir exposed origin name =
       client <- liftIO $ Dir.doesFileExist clientPath
       server <- liftIO $ Dir.doesFileExist serverPath
       if client
-        then return $ Kernel clientPath (if server then Just serverPath else Nothing)
+        then trace "foundKernel" (return $ Kernel clientPath (if server then Just serverPath else Nothing))
         else
           case Map.lookup (N.drop 11 name) exposed of
             Just [Pkg.Package pkg _vsn] | pkg == Pkg.core || pkg == Pkg.virtualDom ->

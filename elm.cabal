@@ -36,7 +36,7 @@ Flag dev {
 
 Executable elm
     if flag(dev)
-        ghc-options: -O0 -Wall -Werror
+        ghc-options: -O0 -Wall -Werror -rtsopts -eventlog -fexternal-interpreter -fprof-auto -fprof-cafs
     else
         ghc-options: -O2 -fsimpl-tick-factor=200 -rtsopts
 
