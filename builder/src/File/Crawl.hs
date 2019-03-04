@@ -5,6 +5,7 @@ module File.Crawl
   , Graph(..)
   , crawl
   , crawlFromSource
+  , dumpGraph
   )
   where
 
@@ -30,7 +31,11 @@ import qualified File.IO as IO
 import qualified Reporting.Exit as Exit
 import qualified Reporting.Exit.Crawl as E
 import qualified Reporting.Task as Task
+
 import Debug.Trace
+import qualified Data.List as List
+-- import qualified Data.Text.Encoding as TextEncoding
+-- import qualified Data.Text as Text
 
 
 
@@ -59,6 +64,9 @@ initWorkGraph :: Args.Args Module.Raw -> Map.Map Module.Raw Header.Info -> WorkG
 initWorkGraph args locals =
   Graph args locals Map.empty Map.empty []
 
+dumpGraph :: Graph kernel problem -> String
+dumpGraph (Graph _ _ kernels _ _) =
+  List.intercalate "\n" (map Module.nameToString (Map.keys kernels))
 
 
 -- CRAWL
@@ -70,16 +78,16 @@ crawl summary args =
     Args.Pkg names ->
       do  let roots = map (Unvisited E.ElmJson) names
           let graph = initWorkGraph (Args.Pkg names) Map.empty
-          depthFirstSearch summary roots graph
+          trace "Args.Pkg" $ depthFirstSearch summary roots graph
 
     Args.Roots path [] ->
-      crawlHelp summary =<< Header.readOneFile summary path
+      trace "Args.Roots path" $ crawlHelp summary =<< Header.readOneFile summary path
 
     Args.Roots p ps ->
       do  (h,hs) <- Header.readManyFiles summary p ps
           let unvisited = concatMap toUnvisited (h:hs)
           let graph = initWorkGraph (Args.Roots (fst h) (map fst hs)) (Map.fromList (h:hs))
-          depthFirstSearch summary unvisited graph
+          trace "Args.Roots p ps" $ depthFirstSearch summary unvisited graph
       where
         toUnvisited (name, Header.Info path _ _ deps) =
           map (Unvisited (E.Module path name)) deps
@@ -90,7 +98,9 @@ crawlFromSource summary@(Summary _ project _ _ _) source =
   crawlHelp summary =<<
     Header.readSource project source
 
-
+--
+-- Srinath
+--
 crawlHelp :: Summary -> ( Maybe Module.Raw, Header.Info ) -> Task.Task Result
 crawlHelp summary ( maybeName, info@(Header.Info path _ _ deps) ) =
   do  let name = maybe "Main" id maybeName
@@ -238,7 +248,7 @@ toVisitor summary (Unvisited origin name) =
           trace ("GotKernel: " ++ Module.nameToString name) (return $ Kernel name (clientPath, maybeServerPath))
 
         Find.ForeignKernel ->
-          return ForeignKernel
+          trace ("Got ForeignKernel" ++ Module.nameToString name) $ return ForeignKernel
 
 
 
@@ -251,12 +261,13 @@ visitKernels
   -> Map.Map Module.Raw (FilePath, Maybe FilePath)
   -> Task.Task (Map.Map Module.Raw Obj.Kernel)
 visitKernels summary locals kernelPaths =
+  trace "visitKernels" $
   if Map.null kernelPaths then
-    return Map.empty
+    trace "empty kernel path" $ return Map.empty
   else
     -- TODO do this concurrently?
     -- Need better concurrency primitives in Task
-    traverse (readKernel (toImportDict summary locals)) kernelPaths
+    trace "traversing kernel" $ traverse (readKernel (toImportDict summary locals)) kernelPaths
 
 
 readKernel :: ImportDict -> (FilePath, Maybe FilePath) -> Task.Task Obj.Kernel

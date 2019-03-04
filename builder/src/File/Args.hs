@@ -14,6 +14,8 @@ import qualified Reporting.Exit as Exit
 import qualified Reporting.Exit.Make as E
 import qualified Reporting.Task as Task
 
+import qualified Data.List as List
+import Debug.Trace
 
 data Args root
   = Pkg [Module.Raw]
@@ -24,7 +26,7 @@ fromPaths :: Summary.Summary -> [FilePath] -> Task.Task (Args FilePath)
 fromPaths summary paths =
   case paths of
     [] ->
-      fromSummary summary
+      trace ("compile.paths: " ++ List.intercalate "\n" paths) $ fromSummary summary
 
     first : rest ->
       return $ Roots first rest

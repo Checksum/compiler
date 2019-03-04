@@ -30,6 +30,7 @@ import qualified Generate.JavaScript.Mode as Mode
 import qualified Reporting.Doc as D
 import qualified Reporting.Render.Type as RT
 import qualified Reporting.Render.Type.Localizer as L
+
 import Debug.Trace
 
 
@@ -52,12 +53,12 @@ generate mode (Opt.Graph mains graph _fields) roots =
       do trace "nothing at all" $ None
 
     name:names ->
-      trace ("something: " ++ (N.toString name)) (
+      trace ("something: " ++ (N.toString name)) $
       let
         state = Map.foldrWithKey (addMain mode graph) emptyState rootMap
         builder = perfNote mode <> stateToBuilder state <> toMainExports mode rootMap
       in
-      Some name names builder)
+      Some name names builder
 
 
 addMain :: Mode.Mode -> Graph -> ModuleName.Canonical -> main -> State -> State
@@ -159,13 +160,26 @@ addGlobal mode graph state@(State revKernels builders seen) global =
       State revKernels builders (Set.insert global seen)
 
 
+-- dumpGraph graph =
+--   List.intercalate "\n" (map Opt.toString (Map.keys graph))
+
+
 addGlobalHelp :: Mode.Mode -> Graph -> Opt.Global -> State -> State
-addGlobalHelp mode graph global state =
+addGlobalHelp mode graph originalGlobal state =
   let
     addDeps deps someState =
       Set.foldl' (addGlobal mode graph) someState deps
+    global =
+        if Map.member originalGlobal graph then
+          originalGlobal
+        else
+          -- Opt.fromString "" ""
+          originalGlobal
+    -- dump =
+    --   List.intercalate "\n" (map Opt.toString (Map.keys graph))
   in
-  trace ("isMember: " ++ (if (Map.member global graph) then "True" else "False") ++ ", name: " ++ Opt.toString global) $
+  trace ("isMember: " ++ (if (Map.member global graph) then "True" else "False") ++ ", name: " ++ Opt.toString global ++ ", dump: ")
+  $
   case graph ! global of
     Opt.Define expr deps ->
       trace "Opt.Define" $ addStmt (addDeps deps state) (
@@ -194,6 +208,14 @@ addGlobalHelp mode graph global state =
     Opt.Manager effectsType ->
       generateManager mode graph global effectsType state
 
+    --
+    -- Srinath
+    --
+    -- This is not being called. This has to run for the kernel to be
+    -- added to the state
+    -- Somehow author/project#Hello|$ isn't in the graph (is it a different name)
+    -- since its added from the local application?
+    -- TODO: figure out how to dump the contents of the graph for debugging
     Opt.Kernel (Opt.KContent clientChunks clientDeps) maybeServer ->
       trace "Opt.Kernel" (
       if isDebugger global && not (Mode.isDebug mode) then
@@ -239,7 +261,7 @@ addBuilder (State revKernels revBuilders seen) builder =
 
 addKernel :: State -> B.Builder -> State
 addKernel (State revKernels revBuilders seen) kernel =
-  State (kernel:revKernels) revBuilders seen
+  trace "addKernel" $State (kernel:revKernels) revBuilders seen
 
 
 var :: Opt.Global -> Expr.Code -> JS.Stmt
@@ -339,7 +361,7 @@ addChunk mode builder chunk =
       Name.toBuilder (Name.fromGlobal home name) <> builder
 
     Opt.JsVar home name ->
-      Name.toBuilder (Name.fromKernel home name) <> builder
+      trace ("name: " ++ N.toString name) $ Name.toBuilder (Name.fromKernel home name) <> builder
 
     Opt.ElmField name ->
       Name.toBuilder (Expr.generateField mode name) <> builder

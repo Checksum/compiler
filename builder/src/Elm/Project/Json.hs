@@ -42,7 +42,7 @@ import qualified Json.Encode as E
 import qualified Reporting.Exit as Exit
 import qualified Reporting.Exit.Assets as E
 import qualified Reporting.Task as Task
-
+import Debug.Trace
 
 
 -- PROJECT
@@ -52,6 +52,24 @@ data Project
   = App AppInfo
   | Pkg PkgInfo
 
+
+
+toString :: Project -> String
+toString project =
+  case project of
+    App info ->
+      let
+        (Pkg.Name author pkg) =
+          _app_name info
+      in
+        "App: " ++ Text.unpack author ++ "/" ++ Text.unpack pkg
+
+    Pkg info ->
+      let
+        (Pkg.Name author pkg) =
+          _pkg_name info
+      in
+        "Pkg: " ++ Text.unpack author ++ "/" ++ Text.unpack pkg
 
 
 -- APPLICATION
@@ -65,6 +83,7 @@ data AppInfo =
     , _app_deps_trans :: Map Name Version
     , _app_test_direct :: Map Name Version
     , _app_test_trans :: Map Name Version
+    , _app_name :: Name
     }
 
 
@@ -106,8 +125,12 @@ defaultSummary =
 isPlatformPackage :: Project -> Bool
 isPlatformPackage project =
   case project of
-    App _ ->
-      False
+    App info ->
+      let
+        (Pkg.Name author _) =
+          _app_name info
+      in
+      author == "Checksum"
 
     Pkg info ->
       let
@@ -119,6 +142,7 @@ isPlatformPackage project =
 
 getName :: Project -> Name
 getName project =
+  traceStack ("getName: " ++ toString project) $
   case project of
     App _ ->
       Pkg.dummyName
@@ -145,7 +169,7 @@ check project =
         then return ()
         else throwBadJson E.NoPkgCore
 
-    App (AppInfo _ _ direct indirect _ _) ->
+    App (AppInfo _ _ direct indirect _ _ _) ->
       if Map.member Pkg.core direct then
 
         if Map.member Pkg.json direct || Map.member Pkg.json indirect
@@ -172,7 +196,7 @@ write root project =
 encode :: Project -> E.Value
 encode project =
   case project of
-    App (AppInfo elm srcDirs depsDirect depsTrans testDirect testTrans) ->
+    App (AppInfo elm srcDirs depsDirect depsTrans testDirect testTrans _) ->
       E.object
         [ "type" ==> E.text "application"
         , "source-directories" ==> E.list (E.text . Text.pack) srcDirs
@@ -252,7 +276,7 @@ read path =
         Right project@(Pkg _) ->
           return project
 
-        Right project@(App (AppInfo _ srcDirs _ _ _ _)) ->
+        Right project@(App (AppInfo _ srcDirs _ _ _ _ _)) ->
           do  mapM_ doesDirectoryExist srcDirs
               return project
 
@@ -301,6 +325,7 @@ appDecoder =
     <*> D.field "dependencies" (D.field "indirect" (depsDecoder versionDecoder))
     <*> D.field "test-dependencies" (D.field "direct" (depsDecoder versionDecoder))
     <*> D.field "test-dependencies" (D.field "indirect" (depsDecoder versionDecoder))
+    <*> D.field "name" pkgNameDecoder
 
 
 pkgDecoder :: Decoder PkgInfo

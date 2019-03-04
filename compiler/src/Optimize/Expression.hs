@@ -22,7 +22,8 @@ import qualified Elm.Name as N
 import qualified Optimize.Case as Case
 import qualified Optimize.Names as Names
 import qualified Reporting.Annotation as A
-
+import Debug.Trace
+import qualified Data.Text as Text
 
 
 -- OPTIMIZE
@@ -32,8 +33,12 @@ type Cycle =
   Set.Set N.Name
 
 
+--
+-- Srinath
+-- why is our kernel not being registered with registerKernel??
 optimize :: Cycle -> Can.Expr -> Names.Tracker Opt.Expr
 optimize cycle (A.At region expression) =
+  traceStack "optimize" $
   case expression of
     Can.VarLocal name ->
       pure (Opt.VarLocal name)
@@ -45,7 +50,7 @@ optimize cycle (A.At region expression) =
         Names.registerGlobal home name
 
     Can.VarKernel home name ->
-      Names.registerKernel home (Opt.VarKernel home name)
+      trace "Can.VarKernel" $ Names.registerKernel home (Opt.VarKernel home name)
 
     Can.VarForeign home name _ ->
       Names.registerGlobal home name
@@ -60,7 +65,7 @@ optimize cycle (A.At region expression) =
       Names.registerGlobal home name
 
     Can.Chr chr ->
-      Names.registerKernel N.utils (Opt.Chr chr)
+      trace ("Can.Chr: " ++ Text.unpack chr) Names.registerKernel N.utils (Opt.Chr chr)
 
     Can.Str str ->
       pure (Opt.Str str)

@@ -17,13 +17,17 @@ import qualified Reporting.Error.Syntax as Error
 import qualified Reporting.Result as Result
 import qualified Validate
 
+import Debug.Trace
 
 
 -- PROGRAM
 
-
+--
+-- srinath
+-- what is parsing our stuff
 program :: Pkg.Name -> B.ByteString -> Result.Result i w Error.Error Valid.Module
 program pkg src =
+  trace ("Parse.program: " ++ (if Pkg.isKernel pkg then "kernel"  else "not kernel")) $
   let
     bodyParser =
       if Pkg.isKernel pkg then
@@ -36,6 +40,7 @@ program pkg src =
   in
   case P.run parser src of
     Right modul ->
+      trace ("Parse.program: " ++ Pkg.toString pkg) $
       Validate.validate modul
 
     Left syntaxError ->

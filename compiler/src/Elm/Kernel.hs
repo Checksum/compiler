@@ -26,6 +26,10 @@ import qualified Parse.Module as Module
 import qualified Reporting.Annotation as A
 import qualified Reporting.Error as E
 
+import Debug.Trace
+import qualified Data.Text.Encoding as TextEncoding
+import qualified Data.Text as Text
+
 
 
 -- PARSE
@@ -37,8 +41,12 @@ type ImportDict =
 
 parse :: ImportDict -> B.ByteString -> Either E.Error Opt.KContent
 parse importDict sourceCode =
+  let
+    sourceText = Text.unpack (TextEncoding.decodeUtf8 sourceCode)
+  in
   case run (parser importDict) sourceCode of
     Right kernel ->
+      trace ("Kernel.parse: " ++ sourceText) $
       Right kernel
 
     Left err ->
@@ -100,13 +108,14 @@ addImport importDict state (Src.Import (A.At _ home) maybeAlias exposing) =
 
 
 -- INVARIANT: the `home` is the * in `Elm.Kernel.*`
---
+-- Srinath
 addKernelImport :: N.Name -> Src.Exposing -> State -> State
 addKernelImport home exposing (State vtable deps) =
   let
     addVar table name =
       Map.insert (N.sepBy 0x5F {- _ -} home name) (Opt.JsVar home name) table
   in
+  trace "addKernelImport" $
   State
     (List.foldl' addVar vtable (toNames exposing))
     (Set.insert (Opt.kernel home) deps)

@@ -26,7 +26,7 @@ import qualified Data.Index as Index
 import qualified Elm.Name as N
 import qualified Elm.Package as Pkg
 import qualified Reporting.Region as R
-
+import Debug.Trace
 
 
 -- GENERATOR
@@ -63,7 +63,7 @@ registerKernel home value =
 
 toKernelGlobal :: N.Name -> Opt.Global
 toKernelGlobal home =
-  Opt.Global (ModuleName.Canonical Pkg.kernel home) N.dollar
+  trace ("toKernelGlobal: " ++ N.toString home) $ Opt.Global (ModuleName.Canonical Pkg.kernel home) N.dollar
 
 
 registerGlobal :: ModuleName.Canonical -> N.Name -> Tracker Opt.Expr

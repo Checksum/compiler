@@ -47,11 +47,12 @@ find (Summary.Summary root project exposed _ _) origin name =
         Project.App info ->
           if N.startsWith "Elm.Kernel." name then
             findKernel (toRoot "src") exposed origin name
+            -- return ForeignKernel
           else
             let
               srcDirs = map toRoot (Project._app_source_dirs info)
             in
-              trace ("path:" ++ Module.nameToSlashPath name) (findElm project srcDirs exposed origin name)
+              trace ("path: " ++ Module.nameToSlashPath name) (findElm project srcDirs exposed origin name)
 
         Project.Pkg _ ->
           if N.startsWith "Elm.Kernel." name then
@@ -78,7 +79,7 @@ findElm project srcDirs exposed origin name =
             trace "findElm#Local" $ return (Local path)
 
         ([], Just [pkg]) ->
-            return (Foreign pkg)
+            trace ("findElm#Foreign") $ return (Foreign pkg)
 
         ([], Nothing) ->
             case project of
@@ -114,6 +115,7 @@ findKernel srcDir exposed origin name =
         else
           case Map.lookup (N.drop 11 name) exposed of
             Just [Pkg.Package pkg _vsn] | pkg == Pkg.core || pkg == Pkg.virtualDom ->
+              trace "findKernel#Foreign" $
               return ForeignKernel
 
             _ ->

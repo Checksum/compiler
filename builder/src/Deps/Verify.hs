@@ -1,5 +1,7 @@
 module Deps.Verify
   ( verify
+  , objGraphFromKernels
+  -- , addKernels, writeObjects
   )
   where
 
@@ -48,6 +50,9 @@ import qualified Stuff.Paths as Paths
 
 -- VERIFY
 
+--
+-- Srinath
+-- This is an important file!!
 
 verify :: FilePath -> Project -> Task.Task Summary.Summary
 verify root project =
@@ -117,7 +122,7 @@ verifyPkg info =
 
 
 appToSolution :: Project.AppInfo -> Task.Task (Map Name Version)
-appToSolution (Project.AppInfo _ _ depsDirect depsTrans testDirect testTrans) =
+appToSolution (Project.AppInfo _ _ depsDirect depsTrans testDirect testTrans _) =
   do  a <- union allowEqualDups depsTrans testDirect
       b <- union noDups depsDirect testTrans
       union noDups a b
@@ -402,6 +407,27 @@ addGraph (Compiler.Artifacts _ elmo _) graph =
   Obj.union elmo graph
 
 
+  --
+  -- Srinath
+  --
+  -- This has to be called for our native kernel
+  -- this seems to actually contain the javascript implementation
+  --
+  -- This is called from install.hs which writes out the required
+  -- binary data like ifaces.dat and objs.dat
+
+
 objGraphFromKernels :: Crawl.Result -> Obj.Graph
 objGraphFromKernels (Crawl.Graph _ _ kernels _ _) =
   Obj.fromKernels kernels
+
+
+-- addKernels :: Crawl.Result -> Map Module.Raw Compiler.Artifacts -> Crawl.Result
+-- addKernels graph results =
+--   Map.foldr addGraph (objGraphFromKernels graph) results
+
+
+-- writeObjects :: Crawl.Result -> Map Module.Raw Compiler.Artifacts -> Task.Task Obj.Graph
+-- writeObjects graph results =
+--   IO.writeBinary (root </> "objs.dat") $
+--       Map.foldr addGraph (objGraphFromKernels graph) results

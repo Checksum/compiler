@@ -128,6 +128,9 @@ getStatus env statusMVars foreigns name (Header.Info path time src deps) =
       return mvar
 
 
+--
+-- Srinath
+--
 addDep :: Dict (MVar Status) -> Dict Pkg.Package -> Info -> Module.Raw -> IO Info
 addDep locals foreigns info name =
   case Map.lookup name locals of

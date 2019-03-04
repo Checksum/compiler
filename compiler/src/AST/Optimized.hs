@@ -14,7 +14,7 @@ module AST.Optimized
   , EffectsType(..)
   , KContent(..)
   , KChunk(..)
-  , toString
+  , toString, fromString
   )
   where
 
@@ -73,10 +73,14 @@ data Global = Global ModuleName.Canonical N.Name
   deriving (Eq, Ord)
 
 
-toString :: Global -> String
-toString (Global _ name) =
-  N.toString name
+fromString :: String -> String -> Global
+fromString _ _ =
+    Global (ModuleName.fromString "Hello") (N.fromString "$")
 
+
+toString :: Global -> String
+toString (Global can name) =
+  ModuleName.toString can ++ "|" ++ N.toString name
 
 
 -- Provide "List" not "Elm.Kernel.List"

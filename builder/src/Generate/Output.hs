@@ -46,6 +46,7 @@ import qualified Reporting.Task as Task
 import qualified Stuff.Paths as Paths
 import Terminal.Args (Parser(..))
 
+-- import qualified Deps.Verify as Verify
 
 
 -- GENERATE
@@ -62,13 +63,16 @@ generate
   -> Crawl.Result
   -> Map.Map Module.Raw Compiler.Artifacts
   -> Task.Task ()
-generate mode target maybeOutput summary graph@(Crawl.Graph args locals _ _ _) artifacts =
+generate mode target maybeOutput summary graph@(Crawl.Graph args locals kernels _ _) artifacts =
   case args of
     Args.Pkg _ ->
       return ()
 
     Args.Roots name names ->
       do  objectGraph <- organize summary graph
+
+          graphWithLocalKernels <-
+            return $ Obj.union objectGraph (Obj.fromKernels kernels)
 
           realMode <-
             case mode of
@@ -80,10 +84,10 @@ generate mode target maybeOutput summary graph@(Crawl.Graph args locals _ _ _) a
                 return $ Mode.dev target
 
               Prod ->
-                do  noDebugUses summary objectGraph
-                    return $ Mode.prod target objectGraph
+                do  noDebugUses summary graphWithLocalKernels
+                    return $ Mode.prod target graphWithLocalKernels
 
-          generateMonolith realMode maybeOutput summary objectGraph (name:names)
+          generateMonolith realMode maybeOutput summary graphWithLocalKernels (name:names)
 
 
 getInterfaces
@@ -202,7 +206,10 @@ loadModuleObj :: FilePath -> Module.Raw -> Task.Task Obj.Graph
 loadModuleObj root name =
   IO.readBinary (Paths.elmo root name)
 
-
+--
+-- Srinath
+--
+-- Generate objs.dat and everything *should* be fine!!
 loadPackageObj :: ( Pkg.Name, (Pkg.Version, deps) ) -> Task.Task Obj.Graph
 loadPackageObj ( name, (version,_) ) =
   do  dir <- Task.getPackageCacheDirFor name version

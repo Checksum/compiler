@@ -120,7 +120,7 @@ data Changes vsn
 
 
 makeAppPlan :: Cache.PackageRegistry -> Pkg.Name -> Project.AppInfo -> Task.Task (Changes Pkg.Version)
-makeAppPlan registry pkg info@(Project.AppInfo _ _ depsDirect depsTrans testDirect testTrans) =
+makeAppPlan registry pkg info@(Project.AppInfo _ _ depsDirect depsTrans testDirect testTrans _) =
   if Map.member pkg depsDirect then
     return AlreadyInstalled
   else
@@ -224,7 +224,7 @@ data AppAnswer =
 
 
 toAppAnswer :: Cache.PackageRegistry -> Pkg.Name -> Project.AppInfo -> Task.Task AppAnswer
-toAppAnswer registry pkg info@(Project.AppInfo _ _ depsDirect depsTrans testDirect testTrans) =
+toAppAnswer registry pkg info@(Project.AppInfo _ _ depsDirect depsTrans testDirect testTrans _) =
   Explorer.run registry $
     do  Explorer.exists pkg
         result <- Solver.run (toAppAnswerHelp pkg info)
@@ -243,7 +243,7 @@ toAppAnswer registry pkg info@(Project.AppInfo _ _ depsDirect depsTrans testDire
 
 
 toAppAnswerHelp :: Pkg.Name -> Project.AppInfo -> Solver.Solver AppAnswer
-toAppAnswerHelp pkg (Project.AppInfo elm srcDirs depsDirect depsTrans testDirect testTrans) =
+toAppAnswerHelp pkg (Project.AppInfo elm srcDirs depsDirect depsTrans testDirect testTrans _) =
   let
     directs =
       Map.union depsDirect testDirect
@@ -267,6 +267,7 @@ toAppAnswerHelp pkg (Project.AppInfo elm srcDirs depsDirect depsTrans testDirect
                     (Map.difference newDeps newDepsDirect)
                     (Map.intersection solution testDirect)
                     (Map.difference (Map.difference solution newDeps) testDirect)
+                    (Pkg.Name "elm" "example")
               }
   in
   msum

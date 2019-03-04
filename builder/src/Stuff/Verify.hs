@@ -69,7 +69,7 @@ data ProjectDeps
 getDeps :: Project.Project -> ProjectDeps
 getDeps project =
   case project of
-    Project.App (Project.AppInfo _ _ depsDirect depsTrans testDirect testTrans) ->
+    Project.App (Project.AppInfo _ _ depsDirect depsTrans testDirect testTrans _) ->
       App depsDirect depsTrans testDirect testTrans
 
     Project.Pkg (Project.PkgInfo _ _ _ _ _ direct test _) ->
@@ -84,7 +84,7 @@ isValidMiniSummary deps project =
         Project.Pkg _ ->
           False
 
-        Project.App (Project.AppInfo _ _ a2 b2 c2 d2) ->
+        Project.App (Project.AppInfo _ _ a2 b2 c2 d2 _) ->
           a == a2 && b == b2 && c == c2 && d == d2
 
     Pkg a b ->

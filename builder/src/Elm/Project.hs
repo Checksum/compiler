@@ -31,7 +31,14 @@ import qualified Reporting.Render.Type.Localizer as L
 import qualified Reporting.Task as Task
 import qualified Stuff.Paths as Path
 
+import Debug.Trace
+-- import qualified Deps.Verify as Verify
+-- import qualified Elm.Compiler.Objects as Obj
 
+
+-- import qualified Data.List as List
+-- import qualified Data.Map as Map
+-- import qualified AST.Optimized as Opt
 
 -- GET ROOT
 
@@ -46,9 +53,55 @@ getRootWithReplFallback =
   Root.getWithReplFallback
 
 
+-- -- Srinath
+
+-- addGraph :: Compiler.Artifacts -> Obj.Graph -> Obj.Graph
+-- addGraph (Compiler.Artifacts _ elmo _) graph =
+--   Obj.union elmo graph
+
+
+--   --
+--   -- Srinath
+--   --
+--   -- This has to be called for our native kernel
+--   -- this seems to actually contain the javascript implementation
+--   --
+--   -- This is called from install.hs which writes out the required
+--   -- binary data like ifaces.dat and objs.dat
+
+
+-- objGraphFromKernels :: Crawl.Result -> Obj.Graph
+-- objGraphFromKernels (Crawl.Graph _ _ kernels _ _) =
+--   Obj.fromKernels kernels
+
+
+-- addKernels :: Crawl.Result -> Map Module.Raw Compiler.Artifacts -> Crawl.Result
+-- addKernels results graph =
+--   Map.foldr addGraph (objGraphFromKernels graph) results
+
+
+-- -- End Srinath
+
 
 -- COMPILE
 
+
+-- dumpGraph graph =
+--   List.intercalate "\n" (map Opt.toString (Map.keys graph))
+  -- let
+  --   dump =
+
+  -- in
+  -- trace ("dump: \n" ++ dump) $
+--
+-- Srinath
+-- The Artifacts.write step is writting out elmi and elmo which seem to be valid
+-- The emlo object has a reference to "elm kernel Hello $" which looks like what
+-- we want. Should that read "author project Hello $"? But then the graph dump
+-- didn't have any reference to that as well
+--
+-- Is the elmo object being read at all?? Does the kernel $ (whatever it means)
+-- being read for local packages
 
 compile
   :: Output.Mode
@@ -61,12 +114,14 @@ compile
 compile mode target maybeOutput docs summary@(Summary.Summary root project _ _ _) paths =
   do  Project.check project
       args <- Args.fromPaths summary paths
-      graph <- Crawl.crawl summary args
-      (dirty, ifaces) <- Plan.plan docs summary graph
-      answers <- Compile.compile project docs ifaces dirty
-      results <- Artifacts.write root answers
+      graph <- trace "Crawl.crawl" $ Crawl.crawl summary args
+      (dirty, ifaces) <- trace ("Plan.plan: \n\n" ++ Crawl.dumpGraph graph ++ "\n\n") $ Plan.plan docs summary graph
+      answers <- trace "Compile.compile" $ Compile.compile project docs ifaces dirty
+      results <- trace "Artifacts.write" $ Artifacts.write root answers
       _ <- traverse (Artifacts.writeDocs results) docs
-      Output.generate mode target maybeOutput summary graph results
+      -- _ <- Verify.writeObjects graph results
+      trace "Output.generate" $ Output.generate mode target maybeOutput summary graph results
+      -- trace "Output.generate" $ Output.generate mode target maybeOutput summary (Verify.addKernels graph results) results
 
 
 

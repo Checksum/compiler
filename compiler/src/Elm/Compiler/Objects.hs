@@ -21,7 +21,7 @@ import qualified AST.Module.Name as ModuleName
 import qualified Elm.Name as N
 import qualified Elm.Package as Pkg
 import qualified Generate.JavaScript as JS
-
+import Debug.Trace
 
 
 -- COMBINE GRAPHS
@@ -76,12 +76,12 @@ fromKernels kernels =
 
 toGlobal :: N.Name -> Opt.Global
 toGlobal home =
-  Opt.Global (ModuleName.Canonical Pkg.kernel (ModuleName.getKernel home)) N.dollar
+  trace ("toGlobal: " ++ N.toString home) $ Opt.Global (ModuleName.Canonical Pkg.kernel (ModuleName.getKernel home)) N.dollar
 
 
 toNode :: Kernel -> Opt.Node
 toNode (Kernel client server) =
-  Opt.Kernel client server
+  trace "Obj.toNode" $ Opt.Kernel client server
 
 
 

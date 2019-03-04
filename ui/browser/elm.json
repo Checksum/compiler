@@ -1,5 +1,6 @@
 {
     "type": "application",
+    "name": "elm/browser",
     "source-directories": [
         "src"
     ],

@@ -43,7 +43,7 @@ import System.FilePath ((</>))
 import qualified Elm.Name as N
 import qualified Json.Decode.Internals as Decode
 import qualified Json.Encode as Encode
-
+import Debug.Trace
 
 
 -- PACKGE NAMES
@@ -173,13 +173,13 @@ gatherCaps char (buffer, chunks) =
 {-# NOINLINE dummyName #-}
 dummyName :: Name
 dummyName =
-  Name "author" "project"
+  traceStack ("Pkg.dummyName") $ Name "author" "project"
 
 
 {-# NOINLINE kernel #-}
 kernel :: Name
 kernel =
-  Name "elm" "kernel"
+  traceStack ("Pkg.kernel") $ Name "elm" "kernel"
 
 
 {-# NOINLINE core #-}

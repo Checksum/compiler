@@ -9,6 +9,7 @@ module AST.Module.Name
   , jsonDecode, jsonEncode
   , webgl, texture, vector2, vector3, vector4, matrix4
   , isKernel, getKernel, canonicalIsKernel
+  , toString, fromString
   )
   where
 
@@ -19,7 +20,7 @@ import Data.Binary
 
 import qualified Elm.Name as N
 import qualified Elm.Package as Pkg
-
+import Debug.Trace
 
 
 -- NAMES
@@ -38,8 +39,15 @@ instance Eq Canonical where
     home == home' && pkg == pkg'
 
 
+toString :: Canonical -> String
+toString (Canonical _package _module) =
+  Pkg.toString _package ++ "#" ++ N.toString _module
+
 
 -- PRIMITIVES
+
+fromString :: String -> Canonical
+fromString name = Canonical (Pkg.Name "author" "project") (N.fromString name)
 
 
 {-# NOINLINE basics #-}
@@ -183,7 +191,10 @@ matrix4 = Canonical Pkg.linearAlgebra "Math.Matrix4"
 
 isKernel :: N.Name -> Bool
 isKernel name =
-  N.startsWith "Elm.Kernel." name
+  -- case N.toString name of
+    -- "Hello" -> True
+    -- _ ->
+    trace ("ModuleName.isKernel: " ++ N.toString name) $ N.startsWith "Elm.Kernel." name
 
 
 getKernel :: N.Name -> N.Name

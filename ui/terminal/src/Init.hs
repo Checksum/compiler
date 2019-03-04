@@ -85,7 +85,7 @@ init =
           liftIO $
             do  Dir.createDirectoryIfMissing True "src"
                 Project.write "." $ Project.App $
-                  Project.AppInfo Compiler.version ["src"] directs indirects Map.empty Map.empty
+                  Project.AppInfo Compiler.version ["src"] directs indirects Map.empty Map.empty (Pkg.Name "user" "package")
 
         Nothing ->
           Task.throw (Exit.Init (E.NoSolution (Map.keys defaults)))
