@@ -44,12 +44,12 @@ find (Summary.Summary root project exposed _ _) origin name =
       let toRoot dir = FP.makeRelative here (root </> dir)
       case project of
         Project.App info ->
+          let
+            srcDirs = map toRoot (Project._app_source_dirs info)
+          in
           if N.startsWith "Elm.Kernel." name then
-            findKernel (toRoot "src") exposed origin name
+            findProjectKernels project srcDirs exposed origin name
           else
-            let
-              srcDirs = map toRoot (Project._app_source_dirs info)
-            in
             findElm project srcDirs exposed origin name
 
         Project.Pkg _ ->
@@ -117,3 +117,35 @@ findKernel srcDir exposed origin name =
 
             _ ->
               Task.throw $ E.ModuleNotFound origin name E.Pkg
+
+
+findProjectKernels :: Project.Project -> [FilePath] -> Summary.ExposedModules -> E.Origin -> Module.Raw -> Task.Task_ E.Problem Asset
+findProjectKernels project srcDirs exposed origin name =
+  do
+      paths <- liftIO $ Maybe.catMaybes <$> mapM (kernelExists name) srcDirs
+
+      case (paths, Map.lookup name exposed) of
+        ([path], Nothing) ->
+            return (Kernel path Nothing)
+
+        ([], Nothing) ->
+            case project of
+              Project.App _ ->
+                Task.throw $ E.ModuleNotFound origin name (E.App srcDirs)
+
+              Project.Pkg _ ->
+                Task.throw $ E.ModuleNotFound origin name E.Pkg
+
+        (_, maybePkgs) ->
+            Task.throw $ E.ModuleAmbiguous origin name paths (maybe [] id maybePkgs)
+
+
+--
+-- TODO(srinath): Load server kernel as well (does it matter?)
+--
+
+kernelExists :: Module.Raw -> FilePath -> IO (Maybe FilePath)
+kernelExists name srcDir =
+  do  let clientPath = srcDir </> Module.nameToSlashPath name <.> "js"
+      client <- Dir.doesFileExist clientPath
+      return $ if client then Just clientPath else Nothing
