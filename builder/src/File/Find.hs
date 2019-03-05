@@ -44,8 +44,13 @@ find (Summary.Summary root project exposed _ _) origin name =
       let toRoot dir = FP.makeRelative here (root </> dir)
       case project of
         Project.App info ->
-          do  let srcDirs = map toRoot (Project._app_source_dirs info)
-              findElm project srcDirs exposed origin name
+          if N.startsWith "Elm.Kernel." name then
+            findKernel (toRoot "src") exposed origin name
+          else
+            let
+              srcDirs = map toRoot (Project._app_source_dirs info)
+            in
+            findElm project srcDirs exposed origin name
 
         Project.Pkg _ ->
           if N.startsWith "Elm.Kernel." name then

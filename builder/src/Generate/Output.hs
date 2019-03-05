@@ -61,13 +61,16 @@ generate
   -> Crawl.Result
   -> Map.Map Module.Raw Compiler.Artifacts
   -> Task.Task ()
-generate mode target maybeOutput summary graph@(Crawl.Graph args locals _ _ _) artifacts =
+generate mode target maybeOutput summary graph@(Crawl.Graph args locals kernels _ _) artifacts =
   case args of
     Args.Pkg _ ->
       return ()
 
     Args.Roots name names ->
       do  objectGraph <- organize summary graph
+
+          graphWithKernels <-
+            return $ Obj.union objectGraph (Obj.fromKernels kernels)
 
           realMode <-
             case mode of
@@ -79,10 +82,10 @@ generate mode target maybeOutput summary graph@(Crawl.Graph args locals _ _ _) a
                 return $ Mode.dev target
 
               Prod ->
-                do  noDebugUses summary objectGraph
-                    return $ Mode.prod target objectGraph
+                do  noDebugUses summary graphWithKernels
+                    return $ Mode.prod target graphWithKernels
 
-          generateMonolith realMode maybeOutput summary objectGraph (name:names)
+          generateMonolith realMode maybeOutput summary graphWithKernels (name:names)
 
 
 getInterfaces
