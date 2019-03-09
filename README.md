@@ -1,17 +1,21 @@
-# The Elm Compiler
+# Elm compiler (native modules for all)
 
-Learn about the Elm programming language at [elm-lang.org](http://elm-lang.org/).
+## Warning: This is definitely NOT what you want.
 
+This is a fork of the [Elm compiler](https://github.com/elm/compiler) version 0.19.0 with Kernel (native) modules for everyone.
 
-## Install
+## Why?
 
-Follow [these instructions][installer]!
+I was interested in understanding how the compiler worked and thought it would be fun to mod it do something extra. Even though I started out with v0.19.0 of Elm and have never written a line of Kernel code, I figured it was something of practical value. And here we are!
 
- [installer]: https://guide.elm-lang.org/install.html
+This is an extremely limited hack and works only for local applications. (Example coming soon)
 
+## Should I use this?
 
-## Help
+__Definitely not!__ This is an experiment and nothing more. If you want to just play around with and understand how Elm kernels work, continue reading. If you want to actually use it, use ports instead.
 
-If you are stuck, ask around on [the Elm slack channel][slack]. Folks are friendly and happy to help with questions!
+## Installing
 
-[slack]: http://elmlang.herokuapp.com/
+* Clone this repo and checkout the `0.19.0-kernel4all` branch
+* Install [Stack](https://www.stackage.org)
+* Run `stack build` to build the `elm` binary
