@@ -107,7 +107,7 @@ isPlatformPackage :: Project -> Bool
 isPlatformPackage project =
   case project of
     App _ ->
-      False
+      True
 
     Pkg info ->
       let
