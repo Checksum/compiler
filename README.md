@@ -1,6 +1,6 @@
 # Elm compiler (native modules for all)
 
-## Warning: This is definitely NOT what you want.
+## Warning: This is an experiment only
 
 This is a fork of the [Elm compiler](https://github.com/elm/compiler) version 0.19.0 with Kernel (native) modules for everyone.
 
