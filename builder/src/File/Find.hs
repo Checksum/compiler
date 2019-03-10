@@ -125,8 +125,8 @@ findProjectKernels project srcDirs exposed origin name =
       paths <- liftIO $ Maybe.catMaybes <$> mapM (kernelExists name) srcDirs
 
       case (paths, Map.lookup name exposed) of
-        ([path], Nothing) ->
-            return (Kernel path Nothing)
+        ([(client, server)], Nothing) ->
+            return (Kernel client server)
 
         ([], Nothing) ->
             case project of
@@ -137,15 +137,17 @@ findProjectKernels project srcDirs exposed origin name =
                 Task.throw $ E.ModuleNotFound origin name E.Pkg
 
         (_, maybePkgs) ->
-            Task.throw $ E.ModuleAmbiguous origin name paths (maybe [] id maybePkgs)
+            Task.throw $ E.ModuleAmbiguous origin name (map fst paths) (maybe [] id maybePkgs)
 
 
---
--- TODO(srinath): Load server kernel as well (does it matter?)
---
-
-kernelExists :: Module.Raw -> FilePath -> IO (Maybe FilePath)
+kernelExists :: Module.Raw -> FilePath -> IO (Maybe (FilePath, Maybe FilePath))
 kernelExists name srcDir =
   do  let clientPath = srcDir </> Module.nameToSlashPath name <.> "js"
-      client <- Dir.doesFileExist clientPath
-      return $ if client then Just clientPath else Nothing
+      let serverPath = srcDir </> Module.nameToSlashPath name <.> "server.js"
+      client <- liftIO $ Dir.doesFileExist clientPath
+      server <- liftIO $ Dir.doesFileExist serverPath
+      return $
+        if client then
+          Just (clientPath, if server then Just serverPath else Nothing)
+        else
+          Nothing
